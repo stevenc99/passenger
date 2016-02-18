@@ -1,6 +1,6 @@
 /*
  *  Phusion Passenger - https://www.phusionpassenger.com/
- *  Copyright (c) 2014-2015 Phusion Holding B.V.
+ *  Copyright (c) 2014-2016 Phusion Holding B.V.
  *
  *  "Passenger", "Phusion Passenger" and "Union Station" are registered
  *  trademarks of Phusion Holding B.V.
@@ -229,6 +229,22 @@ timeToJson(unsigned long long timestamp, unsigned long long now = 0) {
 	return doc;
 }
 
+inline Json::Value
+durationToJson(unsigned long long duration) {
+	Json::Value doc;
+	char buf[64];
+
+	doc["microseconds"] = duration;
+	if (duration >= 10 * 1000000) {
+		snprintf(buf, sizeof(buf), "%.1fs", duration / 1000000.0);
+	} else {
+		snprintf(buf, sizeof(buf), "%.1fms", duration / 1000.0);
+	}
+	doc["human_readable"] = buf;
+
+	return doc;
+}
+
 inline string
 formatFloat(double val) {
 	char buf[64];
@@ -262,6 +278,39 @@ signedByteSizeToJson(long long size) {
 	} else {
 		doc["human_readable"] = formatFloat(size / 1024.0 / 1024.0) + " MB";
 	}
+	return doc;
+}
+
+inline Json::Value
+byteSpeedToJson(double speed, const string &timeUnit) {
+	Json::Value doc;
+	if (speed >= 0) {
+		doc = byteSizeToJson(speed);
+	} else {
+		doc = signedByteSizeToJson(speed);
+	}
+	doc["time_unit"] = timeUnit;
+	return doc;
+}
+
+inline Json::Value
+byteSpeedToJson(double speed, double nullValue, const string &timeUnit) {
+	Json::Value doc;
+	if (speed == nullValue) {
+		doc["bytes"] = Json::Value(Json::nullValue);
+	} else if (speed >= 0) {
+		doc = byteSizeToJson(speed);
+	} else {
+		doc = signedByteSizeToJson(speed);
+	}
+	doc["time_unit"] = timeUnit;
+	return doc;
+}
+
+inline Json::Value
+byteSizeAndCountToJson(size_t size, unsigned int count) {
+	Json::Value doc = byteSizeToJson(size);
+	doc["count"] = count;
 	return doc;
 }
 
